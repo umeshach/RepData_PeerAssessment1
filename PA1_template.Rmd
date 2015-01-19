@@ -1,148 +1,25 @@
 ---
-title: "Assignment 1"
-author: "umeshach"
-date: "Monday, January 19, 2015"
-output: html_document
+title: "Reproducible Research: Peer Assessment 1"
+output: 
+  html_document:
+    keep_md: true
 ---
 
-# Introduction
 
-It is now possible to collect a large amount of data about personal movement using activity monitoring devices such as a Fitbit, Nike Fuelband, or Jawbone Up. These type of devices are part of the "quantified self" movement - a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. But these data remain under-utilized both because the raw data are hard to obtain and there is a lack of statistical methods and software for processing and interpreting the data.
+## Loading and preprocessing the data
 
-This assignment makes use of data from a personal activity monitoring device. This device collects data at 5 minute intervals through out the day. The data consists of two months of data from an anonymous individual collected during the months of October and November, 2012 and include the number of steps taken in 5 minute intervals each day.
 
-#Data
 
-The data for this assignment can be downloaded from the course web site:
+## What is mean total number of steps taken per day?
 
-Dataset: Activity monitoring data [52K]
-The variables included in this dataset are:
 
-steps: Number of steps taking in a 5-minute interval (missing values are coded as NA)
 
-date: The date on which the measurement was taken in YYYY-MM-DD format
+## What is the average daily activity pattern?
 
-interval: Identifier for the 5-minute interval in which measurement was taken
 
-The dataset is stored in a comma-separated-value (CSV) file and there are a total of 17,568 observations in this dataset.
 
-Code to echo the code chunk but donot prduce result throughout the report
-```{r}
-library(knitr)
-opts_chunk$set(echo = TRUE, results = 'hold')
-```
-Loading and preprocessing the data
-```{r}
-data <- read.csv("activity.csv",header=T, colClasses = c("integer", "Date", "factor"))
-data$month <- as.numeric(format(data$date, "%m"))
-data$day <- as.numeric(format(data$date, "%d"))
-```
-remove data with NA value and create newdata set
+## Imputing missing values
 
-```{r}
-newdata <- na.omit(data)
-rownames(newdata) <- 1:nrow(newdata)
-head(newdata)
-dim(newdata)
-```
-What is mean total number of steps taken per day?
-histogram plot of total step walked per day
-Mean and median step walked calculation
-```{r}
-library(ggplot2)
-ggplot(newdata, aes(date, steps)) + geom_bar(stat = "identity", colour = "green", fill = "green", width = 0.7) + facet_grid(. ~ month, scales = "free") + labs(title = "Total number of steps walked per day over two months", x = "Date", y = "Total number of steps")
-```
-total, mean and median number of step walked each day
-```{r}
-SumSteps <- aggregate(newdata$steps, list(Date = newdata$date), FUN = "sum")$x
-mean(SumSteps)
-median(SumSteps)
-```
-#What is the average daily activity pattern?
-create a line plot (i.e. type = "l") of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all days (y-axis)
-```{r}
-MeanSteps <- aggregate(newdata$steps, list(interval = as.numeric(as.character(newdata$interval))), FUN = "mean")
-names(MeanSteps)[2] <- "meanOfSteps"
-ggplot(MeanSteps, aes(interval, meanOfSteps)) + geom_line(color = "green", size = 0.6) + labs(title = "Line plots of step walked at 5 minute Interval", x = "intervals", y = "Average no. of steps")
-```
-identify 5-minute interval with maximu no of steps travelled in a aday contains the maximum number of steps?
 
-```{r}
-MeanSteps[MeanSteps$meanOfSteps == max(MeanSteps$meanOfSteps), ]
-```
-# imputing missing values
-First we check how many values are missing and then mean value of 5 minute interval walked is used to replace missing value for particular day
-```{r}
-missing_vals <- sum(is.na(data$steps))
-newData <- data 
-for (i in 1:nrow(newData)) {
-  if (is.na(newData$steps[i])) {
-    newData$steps[i] <- MeanSteps[which(newData$interval[i] == MeanSteps$interval), ]$meanOfSteps
-  }
-}
-```
-dimention and missing value check for new data set
-```{r}
-head(newData)
-sum(is.na(newData))
-head(newData)
-sum(is.na(newData))
-```
-make histogram of imputed dataset
 
-```{r}
-ggplot(newData, aes(date, steps)) + geom_bar(stat = "identity",
-                                             colour = "green",
-                                             fill = "green",
-                                             width = 0.8) + facet_grid(. ~ month, scales = "free") + labs(title = "Total number of steps waked perday over two months(no missing data)", x = "Date", y = "Total number of steps")
-```
-make a histogram plot of imputed data set
-```{r}
-ggplot(newData, aes(date, steps)) + geom_bar(stat = "identity",
-                                             colour = "green",
-                                             fill = "green",
-                                             width = 0.8) + facet_grid(. ~ month, scales = "free") + labs(title = "Total number of steps waked perday over two months(no missing data)", x = "Date", y = "Total number of steps")
-```
-Compare imputed data set with original data set (with missing values)
-```{r}
-imputedTotalSteps <- aggregate(newData$steps, 
-                           list(Date = newData$date), 
-                           FUN = "sum")$x
-newMean <- mean(imputedTotalSteps)
-newMean
-newMedian<-median(imputedTotalSteps)
-newMedian
-
-oldMean <- mean(SumSteps)
-oldMedian <- median(SumSteps)
-newMean - oldMean
-newMedian - oldMedian
-```
-#Are there differences in activity patterns between weekdays and weekends?
-First create a new variable with 2 factor level: weekdays and weekend
-```{r}
-newData$weekdays <- factor(format(newData$date, "%A"))
-levels(newData$weekdays)
-levels(newData$weekdays) <- list(weekday = c("Monday", "Tuesday",
-                                             "Wednesday", 
-                                             "Thursday", "Friday"),
-                                 weekend = c("Saturday", "Sunday"))
-levels(newData$weekdays)
-```
-create a panel plot of weekdays and weekend to compare difference in activity pattern
-```{r}
-avgSteps <- aggregate(newData$steps, 
-                      list(interval = as.numeric(as.character(newData$interval)), 
-                           weekdays = newData$weekdays),
-                      FUN = "mean")
-names(avgSteps)[3] <- "meanOfSteps"
-library(lattice)
-xyplot(avgSteps$meanOfSteps ~ avgSteps$interval | avgSteps$weekdays, 
-       layout = c(1, 2), type = "l", 
-       xlab = "Interval", ylab = "Number of steps")
-
-```
-Create a comparision table for steps walked in weekdays and weekend
-```{r}
-table(newData$weekdays)
-```
+## Are there differences in activity patterns between weekdays and weekends?
